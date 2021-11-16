@@ -1,8 +1,39 @@
-import Head from "next/head"
-
+import Head from "next/head";
+import { useState, useEffect } from "react";
 
 export default function Blog(props) {
-    return (
+  const [comments, setComments] = useState([]);
+
+  async function submitForm(e) {
+    e.preventDefault();
+    const body = JSON.stringify({
+      name: e.target.name.value,
+      content: e.target.content.value,
+    });
+    const data = await (
+      await fetch("/api/comments", {
+        method: "POST",
+        body,
+      })
+    ).json();
+
+    // Update comments on the page
+    setComments([...comments, data]);
+  }
+
+  useEffect(() => {
+    // Happens on page load
+    async function loadComments() {
+      const data = await (
+        await fetch("/api/comments", { method: "GET" })
+      ).json();
+      setComments(data);
+    }
+
+    loadComments();
+  }, []);
+
+  return (
     <main>
       <Head>
         <title>My Next App | Post 1</title>
@@ -10,23 +41,41 @@ export default function Blog(props) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <article itemscope itemtype="https://schema.org/Article">
+      <article itemScope itemType="https://schema.org/Article">
         <header>
-            <h1 itemprop="name">{props.title}</h1>
-            <p itemprop="datePublished">{props.date}</p>
-            <p>
-            by <span itemprop="author">{props.author}</span>
-            </p>
+          <h1 itemProp="name">{props.title}</h1>
+          <p itemProp="datePublished">{props.date}</p>
+          <p>
+            by <span itemProp="author">{props.author}</span>
+          </p>
         </header>
 
-        <div itemprop="articleBody">{props.children}</div>
+        <div itemProp="articleBody">{props.children}</div>
       </article>
 
-      <form method="POST" action="/api/comments" onSubmit={(e) => e.preventDefault()}> 
-        <input name='name' type="text" /><br />
-        <textarea rows="2" name='content'></textarea> <br />
+      <h3>Comments</h3>
+      <form method="POST" onSubmit={submitForm}>
+        <input name="name" type="text" id="name" placeholder="Name (opt.)" />
+        <br />
+        <textarea
+          rows="2"
+          name="content"
+          id="content"
+          placeholder="Comment"
+          required={true}
+        ></textarea>
+        <br />
         <input type="submit" value="Submit" />
       </form>
+
+      <ul>
+        {comments.map((c, i) => (
+          <li key={i}>
+            <h4>{c.name}</h4>
+            <p>{c.content}</p>
+          </li>
+        ))}
+      </ul>
     </main>
-  )
+  );
 }
